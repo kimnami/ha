@@ -204,6 +204,7 @@ int d_srcB = [
 
 ## What register should be used as the E destination?
 int d_dstE = [
+	D_icode in { IRRMOVL } && M_Cnd : D_rB;
 	D_icode in { IRRMOVL, IIRMOVL, IOPL} : D_rB;
 	D_icode in { IPUSHL, IPOPL, ICALL, IRET } : RESP;
 	1 : RNONE;  # Don't write any register
@@ -271,7 +272,7 @@ bool set_cc = E_icode == IOPL &&
 ##   from memory stage when appropriate
 ## Here it is set to the default used in the normal pipeline
 int e_valA = [
-	(M_icode == IMRMOVL&& E_icode ==IRMMOVL && E_srcA == M_dstE) : m_valM; 
+	(M_icode == IMRMOVL&& E_icode ==IRMMOVL && E_srcA == M_dstM) : m_valM; 
 	1 : E_valA;  # Use valA from stage pipe register
 ];
 
@@ -330,15 +331,15 @@ bool F_bubble = 0;
 bool F_stall =
 	# Conditions for a load/use hazard
 	## Set this to the new load/use condition
-        (E_icode == IMRMOVL && ( E_dstM == d_srcB || ( E_dstM == d_srcA && 
-         !D_icode == IRMMOVL)))||
+        (E_icode == IMRMOVL && E_dstM == d_srcB)||
 	# Stalling at fetch while ret passes through pipeline
-	IRET in { D_icode, E_icode, M_icode };
+	 IRET in { D_icode, E_icode, M_icode };
 # Should I stall or inject a bubble into Pipeline Register D?
 # At most one of these can be true.
 bool D_stall = 
-	(E_icode == IMRMOVL && ( E_dstM == d_srcB || ( E_dstM == d_srcA &&
-	 !D_icode == IRMMOVL)));
+        (E_icode == IMRMOVL && E_dstM == d_srcB);
+	##(E_icode == IMRMOVL && ( E_dstM == d_srcB || ( E_dstM == d_srcA &&
+	 ##!D_icode == IRMMOVL)));
 	# Conditions for a load/use hazard
 	## Set this to the new load/use condition 
 
@@ -358,9 +359,9 @@ bool E_bubble =
 	(E_icode == IJXX && !e_Cnd) ||
 	# Conditions for a load/use hazard
 	## Set this to the new load/use condition
-        (E_icode == IMRMOVL && ( E_dstM == d_srcB || ( E_dstM == d_srcA &&
-         !D_icode == IRMMOVL)));
-
+        ##(E_icode == IMRMOVL && ( E_dstM == d_srcB || ( E_dstM == d_srcA &&
+         ##!D_icode == IRMMOVL)));
+        (E_icode == IMRMOVL && E_dstM == d_srcB);
 # Should I stall or inject a bubble into Pipeline Register M?
 # At most one of these can be true.
 bool M_stall = 0;
